@@ -29,5 +29,4 @@ defmodule ShadowSocks.Server do
 
     accept(socket)
   end
-
 end
