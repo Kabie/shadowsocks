@@ -14,7 +14,7 @@ defmodule ShadowSocks.Server do
     # TODO: Make this supervised
     {:ok, listener} = Task.start_link(__MODULE__, :accept, [socket])
 
-    IO.puts "ShadowSocks server started"
+    IO.puts "ShadowSocks server started at :#{port}"
     {:ok, {socket, listener}}
   end
 
@@ -23,7 +23,7 @@ defmodule ShadowSocks.Server do
 
     import Supervisor.Spec
     {:ok, client} = Supervisor.start_child(@supervisor,
-      worker(@worker, [channel], id: {@worker, channel}))
+      worker(@worker, [channel], id: {@worker, channel}, restart: :transient))
 
     :ok = :gen_tcp.controlling_process(channel, client)
 
