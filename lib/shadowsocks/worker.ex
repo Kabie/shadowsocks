@@ -13,29 +13,26 @@ defmodule ShadowSocks.Worker do
 
   def init(channel) do
     password = "password"
-    {key, encoder_iv} = ShadowSocks.Coder.evp_bytes_to_key(password, @key_len, @iv_len)
-    {:ok, decoder_iv} = :gen_tcp.recv(channel, @iv_len)
+    {key, encode_iv} = ShadowSocks.Coder.evp_bytes_to_key(password, @key_len, @iv_len)
+    {:ok, decode_iv} = :gen_tcp.recv(channel, @iv_len)
     # :gen_tcp.send(channel, encoder_iv)
-    encoder = ShadowSocks.Coder.new(key, encoder_iv)
-    decoder = ShadowSocks.Coder.new(key, decoder_iv)
-    IO.inspect(decoder_iv)
     :ok = :inet.setopts(channel, active: true)
-    {:ok, {channel, key, encoder, decoder, ""}}
+    {:ok, {channel, key, encode_iv, decode_iv}}
   end
 
-  def handle_info({_event, _pid, bytes}, {channel, key, encoder, decoder, buffer}) do
+  def handle_info({:tcp, channel, bytes}, {channel, key, _encode_iv, decode_iv} = state) do
     bytes
     |> IO.inspect
     |> String.length
     |> IO.inspect
 
-    {new_decoder, decoded} = ShadowSocks.Coder.decode(decoder, bytes)
+    decoded = ShadowSocks.Coder.decode(bytes, key, decode_iv)
     IO.inspect(decoded)
-    {domain, port, payload} = parse(decoded)
-    {:noreply, {channel, key, encoder, new_decoder, buffer}}
+    parse(decoded)
+    {:noreply, state}
   end
 
-  def handle_info({:tcp_closed, pid}, state) do
+  def handle_info({:tcp_closed, channel}, {channel, _key, _encode_iv, _decode_iv} = state) do
     IO.puts "Worker stop"
     {:stop, :normal, state}
   end
@@ -45,13 +42,18 @@ defmodule ShadowSocks.Worker do
     {:noreply, state}
   end
 
-  def parse(<< 3, len, domain :: binary-size(len), port :: size(16), payload :: binary >>) do
+  def parse(<<3, len, domain::binary-size(len), port::size(16), payload::binary>>) do
+    {:ok, pid} = :gen_tcp.connect(to_char_list(domain), port, [:binary,
+      packet: :raw, active: true])
+    :ok = :gen_tcp.send(pid, payload)
+
     {domain, port, payload}
     |> IO.inspect
   end
 
   def parse(data) do
-    data
+    {:unknown, data}
+    |> IO.inspect
   end
 
 end

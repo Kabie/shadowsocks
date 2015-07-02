@@ -17,8 +17,12 @@ defmodule ShadowSocks.Coder do
     end
   end
 
-  def new(key, iv), do: :crypto.stream_init(:aes_ctr, key, iv)
-  defdelegate encode(encoder, bytes), to: :crypto, as: :stream_encrypt
-  defdelegate decode(decoder, bytes), to: :crypto, as: :stream_decrypt
+  def decode(bytes, key, iv) do
+    :crypto.block_decrypt :aes_cfb128, key, iv, bytes
+  end
+
+  def encode(bytes, key, iv) do
+    :crypto.block_encrypt :aes_cfb128, key, iv, bytes
+  end
 
 end
