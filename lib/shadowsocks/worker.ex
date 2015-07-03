@@ -17,49 +17,60 @@ defmodule ShadowSocks.Worker do
     password = "password"
     {key, encode_iv} = ShadowSocks.Coder.evp_bytes_to_key(password, @key_len, @iv_len)
     {:ok, decode_iv} = :gen_tcp.recv(client, @iv_len)
-    IO.inspect decode_iv
+    # IO.inspect decode_iv
     :gen_tcp.send(client, encode_iv)
     :ok = :inet.setopts(client, active: true)
-    {:ok, {client, key, {key, encode_iv, ""}, decode_iv}}
+    {:ok, {:init, client, nil, {key, encode_iv, ""}, {key, decode_iv, ""}}}
   end
 
   @doc """
-  Handler for client requests
+  Handle first requests
   """
-  def handle_info({:tcp, client, bytes}, {client, key, _encoder, decode_iv} = state) do
-    bytes
-    |> IO.inspect
-    |> ShadowSocks.Coder.decode(key, decode_iv)
-    |> IO.inspect
-    |> parse
-    |> IO.inspect
-    |> forward_request
+  def handle_info({:tcp, client, bytes}, {:init, client, nil, encoder, decoder}) do
+    {new_decoder, decoded} = bytes
+    |> ShadowSocks.Coder.decode(decoder)
 
-    {:noreply, state}
+    remote = decoded
+    |> parse_header
+    |> connect_remote
+
+    IO.puts "Link started #{inspect remote}"
+
+    {:noreply, {:stream, client, remote, encoder, new_decoder}}
+  end
+
+  @doc """
+  Handle streaming requests
+  """
+  def handle_info({:tcp, client, bytes}, {:stream, client, remote, encoder, decoder}) do
+    {new_decoder, decoded} = bytes
+    |> ShadowSocks.Coder.decode(decoder)
+
+    :ok = :gen_tcp.send(remote, decoded)
+    {:noreply, {:stream, client, remote, encoder, decoder}}
   end
 
   @doc """
   Received remote response
   """
-  def handle_info({:tcp, remote, bytes}, {client, key, encoder, decode_iv}) do
-
+  def handle_info({:tcp, remote, bytes}, {:stream, client, remote, encoder, decoder}) do
     {new_encoder, encoded} = bytes
-    |> IO.inspect
     |> ShadowSocks.Coder.encode(encoder)
 
-    encoded
-    |> IO.inspect
-    |> send_back_to(client)
-
-    {:noreply, {client, key, new_encoder, decode_iv}}
+    :ok = :gen_tcp.send(client, encoded)
+    {:noreply, {:stream, client, remote, new_encoder, decoder}}
   end
 
   @doc """
   Client disconnect
   """
-  def handle_info({:tcp_closed, client}, {client, _key, _encode_iv, _decode_iv} = state) do
+  def handle_info({:tcp_closed, client}, {_status, client, _remote, _encoder, _decoder} = state) do
     IO.puts "Worker #{inspect client} stop"
     {:stop, :normal, state}
+  end
+  def handle_info({:tcp_closed, remote}, {_status, _client, _remote, _encoder, _decoder} = state) do
+    IO.puts "Link #{inspect remote} stop"
+    {:noreply, state}
   end
 
   def handle_info(msg, state) do
@@ -67,29 +78,22 @@ defmodule ShadowSocks.Worker do
     {:noreply, state}
   end
 
-  # Parse domain request
-  defp parse(<<3, len, domain::binary-size(len), port::size(16), payload::binary>>) do
+  # Parse_header domain request
+  defp parse_header(<<3, len, domain::binary-size(len), port::size(16), payload::binary>>) do
     {domain, port, payload}
   end
 
-  defp parse(data) do
+  defp parse_header(data) do
+    IO.inspect data
     {:error, :unknown_request_type}
   end
 
-  defp forward_request({:error, reason}) do
-    IO.puts "Error: #{reason}"
-  end
-
-  # Send request to remote
-  defp forward_request({host, port, payload}) do
+  # Start connection to remote
+  defp connect_remote({host, port, payload}) do
     {:ok, pid} = :gen_tcp.connect(to_char_list(host), port, [:binary,
       packet: :raw, active: true])
     :ok = :gen_tcp.send(pid, payload)
-    IO.puts "Link started #{inspect pid}"
-  end
-
-  defp send_back_to(bytes, client) do
-    :ok = :gen_tcp.send(client, bytes)
+    pid
   end
 
 end
