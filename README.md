@@ -1,4 +1,4 @@
 ShadowSocks
 ===========
 
-** TODO: Add description **
+A ShadowSocks implementation, in Elixir
