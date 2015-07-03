@@ -25,13 +25,17 @@ defmodule ShadowSocks.Worker do
     {new_decoder, decoded} = bytes
     |> ShadowSocks.Coder.decode(decoder)
 
-    remote = decoded
+    case decoded
     |> parse_header
-    |> connect_remote
-
-    Logger.info "Link started #{inspect remote}"
-
-    {:noreply, {:stream, client, remote, encoder, new_decoder}}
+    |> connect_remote do
+      {{:ok, remote}, payload} ->
+        :ok = :gen_tcp.send(remote, payload)
+        Logger.info "Link started #{inspect remote}"
+        {:noreply, {:stream, client, remote, encoder, new_decoder}}
+      {{:error, reason}, _} ->
+        Logger.warn "Link quit for:", reason
+        {:stop, reason, {:stop, client, nil, encoder, decoder}}
+    end
   end
 
   @doc """
@@ -41,7 +45,7 @@ defmodule ShadowSocks.Worker do
     {new_decoder, decoded} = bytes
     |> ShadowSocks.Coder.decode(decoder)
 
-    :ok = :gen_tcp.send(remote, decoded)
+    :gen_tcp.send(remote, decoded)
     {:noreply, {:stream, client, remote, encoder, new_decoder}}
   end
 
@@ -59,9 +63,9 @@ defmodule ShadowSocks.Worker do
   @doc """
   Client disconnect
   """
-  def handle_info({:tcp_closed, client}, {_status, client, _remote, _encoder, _decoder} = state) do
+  def handle_info({:tcp_closed, client}, {_status, client, remote, encoder, decoder}) do
     Logger.info "Worker #{inspect client} stop"
-    {:stop, :normal, state}
+    {:stop, :normal, {:stop, client, remote, encoder, decoder}}
   end
 
   @doc """
@@ -77,9 +81,16 @@ defmodule ShadowSocks.Worker do
     {:noreply, state}
   end
 
-  # Parse_header domain request
+  # Domain header
   defp parse_header(<<3, len, domain::binary-size(len), port::size(16), payload::binary>>) do
-    {domain, port, payload}
+    IO.inspect domain
+    {to_char_list(domain), port, payload}
+  end
+
+  # IPv4 header
+  defp parse_header(<<1, i1, i2, i3, i4, port::size(16), payload::binary>>) do
+    IO.inspect {i1, i2, i3, i4}
+    {{i1, i2, i3, i4}, port, payload}
   end
 
   defp parse_header(data) do
@@ -88,11 +99,8 @@ defmodule ShadowSocks.Worker do
   end
 
   # Start connection to remote
-  defp connect_remote({host, port, payload}) do
-    {:ok, pid} = :gen_tcp.connect(to_char_list(host), port, [:binary,
-      packet: :raw, active: true])
-    :ok = :gen_tcp.send(pid, payload)
-    pid
+  defp connect_remote({address, port, payload}) do
+    {:gen_tcp.connect(address, port, [:binary, packet: :raw, active: true]), payload}
   end
 
 end
