@@ -1,11 +1,12 @@
 defmodule ShadowSocks.Worker do
+  require Logger
   use GenServer
 
   @key_len 16
   @iv_len 16
 
   def start_link(client) do
-    IO.puts "Worker #{inspect client} started"
+    Logger.info "Worker #{inspect client} started"
 
     GenServer.start_link(__MODULE__, client)
   end
@@ -34,7 +35,7 @@ defmodule ShadowSocks.Worker do
     |> parse_header
     |> connect_remote
 
-    IO.puts "Link started #{inspect remote}"
+    Logger.info "Link started #{inspect remote}"
 
     {:noreply, {:stream, client, remote, encoder, new_decoder}}
   end
@@ -47,7 +48,7 @@ defmodule ShadowSocks.Worker do
     |> ShadowSocks.Coder.decode(decoder)
 
     :ok = :gen_tcp.send(remote, decoded)
-    {:noreply, {:stream, client, remote, encoder, decoder}}
+    {:noreply, {:stream, client, remote, encoder, new_decoder}}
   end
 
   @doc """
@@ -65,16 +66,20 @@ defmodule ShadowSocks.Worker do
   Client disconnect
   """
   def handle_info({:tcp_closed, client}, {_status, client, _remote, _encoder, _decoder} = state) do
-    IO.puts "Worker #{inspect client} stop"
+    Logger.info "Worker #{inspect client} stop"
     {:stop, :normal, state}
   end
-  def handle_info({:tcp_closed, remote}, {_status, _client, _remote, _encoder, _decoder} = state) do
-    IO.puts "Link #{inspect remote} stop"
+
+  @doc """
+  Remote disconnect
+  """
+  def handle_info({:tcp_closed, remote}, {_status, _client, remote, _encoder, _decoder} = state) do
+    Logger.info "Link #{inspect remote} stop"
     {:noreply, state}
   end
 
   def handle_info(msg, state) do
-    IO.inspect msg
+    Logger.warn "Got msg", msg
     {:noreply, state}
   end
 
@@ -84,8 +89,8 @@ defmodule ShadowSocks.Worker do
   end
 
   defp parse_header(data) do
-    IO.inspect data
-    {:error, :unknown_request_type}
+    Logger.error "Can't parse header:", data
+    {:error, :unknown_header_type}
   end
 
   # Start connection to remote

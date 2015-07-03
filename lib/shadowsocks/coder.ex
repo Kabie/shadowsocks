@@ -17,10 +17,6 @@ defmodule ShadowSocks.Coder do
     end
   end
 
-  # def decode(bytes, key, iv) do
-  #   :crypto.block_decrypt :aes_cfb128, key, iv, bytes
-  # end
-
   # def collect(bytes, buffer) do
   #   _collect(buffer <> bytes, "")
   # end

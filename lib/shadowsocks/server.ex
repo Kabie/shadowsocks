@@ -1,4 +1,5 @@
 defmodule ShadowSocks.Server do
+  require Logger
   use GenServer
   @supervisor ShadowSocks.Supervisor
   @worker ShadowSocks.Worker
@@ -14,7 +15,7 @@ defmodule ShadowSocks.Server do
     # TODO: Make this supervised
     {:ok, listener} = Task.start_link(__MODULE__, :accept, [socket])
 
-    IO.puts "ShadowSocks server started at :#{port}"
+    Logger.info "ShadowSocks server started at :#{port}"
     {:ok, {socket, listener}}
   end
 

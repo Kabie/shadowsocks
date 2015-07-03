@@ -48,7 +48,6 @@ defmodule ShadowSocksTest.Coder do
                             31, 196, 164, 235, 118, 141, 239, 155,
                             76, 32, 160, 96, 72, 30, 251, 176,
                             1, 122, 10, 190 >>, init_coder)
-    IO.inspect(c)
     assert c == c1 <> c2 <> c3
   end
 
