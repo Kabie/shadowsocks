@@ -1,4 +1,4 @@
 ShadowSocks
 ===========
 
-A ShadowSocks implementation, in Elixir
+A ShadowSocks server implemented in Elixir

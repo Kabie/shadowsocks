@@ -9,10 +9,10 @@ defmodule ShadowSocks do
 
     opts = Application.get_env(:shadowsocks, :server)
 
-    port = int "SHADOW_PORT", opts.port
+    port = integer "SHADOW_PORT", opts.port
     password = string "SHADOW_PASS", opts.password
-    key_length = int "SHADOW_KEYLEN", opts.key_length
-    iv_length = int "SHADOW_IVLEN", opts.iv_length
+    key_length = integer "SHADOW_KEYLEN", opts.key_length
+    iv_length = integer "SHADOW_IVLEN", opts.iv_length
 
     {key, iv} = ShadowSocks.Coder.evp_bytes_to_key(password, key_length, iv_length)
 

@@ -17,15 +17,11 @@ defmodule ShadowSocks.Coder do
     end
   end
 
-  # def collect(bytes, buffer) do
-  #   _collect(buffer <> bytes, "")
-  # end
-  def _collect(<<block::binary-size(16), rest::binary>>, blocks) do
-    _collect(rest, blocks <> block)
+  defp collect(<<block::binary-size(16), rest::binary>>, blocks) do
+    collect(rest, blocks <> block)
   end
-  def _collect(bytes, blocks) do
-    {bytes, blocks}
-  end
+
+  defp collect(bytes, blocks), do: {bytes, blocks}
 
   # TODO: refactoring
   def encode(bytes, {key, iv, buffer}) do
