@@ -18,7 +18,7 @@ defmodule ShadowSocks.Worker do
     {key, encode_iv} = ShadowSocks.Coder.evp_bytes_to_key(password, @key_len, @iv_len)
     {:ok, decode_iv} = :gen_tcp.recv(client, @iv_len)
     IO.inspect decode_iv
-    # :gen_tcp.send(client, encode_iv)
+    :gen_tcp.send(client, encode_iv)
     :ok = :inet.setopts(client, active: true)
     {:ok, {client, key, encode_iv, decode_iv}}
   end
@@ -39,7 +39,7 @@ defmodule ShadowSocks.Worker do
   end
 
   @doc """
-  Received target response
+  Received remote response
   """
   def handle_info({:tcp, remote, bytes}, {client, key, encode_iv, _decode_iv} = state) do
     bytes
