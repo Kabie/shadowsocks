@@ -2,23 +2,17 @@ defmodule ShadowSocks.Worker do
   require Logger
   use GenServer
 
-  @key_len 16
-  @iv_len 16
-
-  def start_link(client) do
+  def start_link(client, key, iv) do
     Logger.info "Worker #{inspect client} started"
 
-    GenServer.start_link(__MODULE__, client)
+    GenServer.start_link(__MODULE__, {client, key, iv})
   end
 
   @doc """
   Set coder, start receiving from client
   """
-  def init(client) do
-    password = "password"
-    {key, encode_iv} = ShadowSocks.Coder.evp_bytes_to_key(password, @key_len, @iv_len)
-    {:ok, decode_iv} = :gen_tcp.recv(client, @iv_len)
-    # IO.inspect decode_iv
+  def init({client, key, encode_iv}) do
+    {:ok, decode_iv} = :gen_tcp.recv(client, :erlang.size(encode_iv))
     :gen_tcp.send(client, encode_iv)
     :ok = :inet.setopts(client, active: true)
     {:ok, {:init, client, nil, {key, encode_iv, ""}, {key, decode_iv, ""}}}

@@ -24,4 +24,12 @@ use Mix.Config
 #     import_config "#{Mix.env}.exs"
 
 config :logger, :console,
-  level: :info
+  level: :info,
+  format: "$date $time [$level] $metadata$message\n",
+  metadata: [:user_id]
+
+config ShadowSocks, :server,
+  port: String.to_integer(System.get_env("SHADOW_PORT") || "8388"),
+  password: System.get_env("SHADOW_PASS") || "password",
+  key_length: 16,
+  iv_length: 16
