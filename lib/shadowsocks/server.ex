@@ -25,7 +25,7 @@ defmodule ShadowSocks.Server do
 
     import Supervisor.Spec
     {:ok, client} = Supervisor.start_child(@supervisor,
-      worker(@worker, [channel, key, iv], id: {@worker, channel}, restart: :transient))
+      worker(@worker, [channel, key, iv], id: {@worker, channel}, restart: :temporary))
 
     :ok = :gen_tcp.controlling_process(channel, client)
 

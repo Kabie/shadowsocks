@@ -3,7 +3,7 @@ defmodule ShadowSocks.Mixfile do
 
   def project do
     [app: :shadowsocks,
-     version: "0.1.0",
+     version: "0.2.0",
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -28,6 +28,8 @@ defmodule ShadowSocks.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    []
+    [
+      exrm: "~> 0.18.1"
+    ]
   end
 end
