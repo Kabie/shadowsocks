@@ -21,8 +21,31 @@ defmodule ShadowSocks.Coder do
     :crypto.block_decrypt :aes_cfb128, key, iv, bytes
   end
 
-  def encode(bytes, key, iv) do
-    :crypto.block_encrypt :aes_cfb128, key, iv, bytes
+  # def collect(bytes, buffer) do
+  #   _collect(buffer <> bytes, "")
+  # end
+  def _collect(<<block::binary-size(16), rest::binary>>, blocks) do
+    _collect(rest, blocks <> block)
+  end
+  def _collect(bytes, blocks) do
+    {bytes, blocks}
+  end
+
+  # TODO: refactoring
+  def encode(bytes, {key, iv, buffer}) do
+    txt_len = :erlang.size bytes
+    buf_len = :erlang.size buffer
+    total = buffer <> bytes
+    blk_len = div(:erlang.size(total), 16) * 16
+    << blocks :: binary-size(blk_len), rest :: binary >> = total
+
+    encoded_blocks = :crypto.block_encrypt :aes_cfb128, key, iv, blocks
+    new_iv = iv <> encoded_blocks
+    new_iv = :erlang.binary_part(new_iv, :erlang.size(new_iv), -16)
+    encoded_rest = :crypto.block_encrypt :aes_cfb128, key, new_iv, rest
+    encoded = encoded_blocks <> encoded_rest
+    result = :erlang.binary_part(encoded, buf_len, txt_len)
+    {{key, new_iv, rest}, result}
   end
 
 end

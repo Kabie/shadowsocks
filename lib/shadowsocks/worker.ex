@@ -20,13 +20,13 @@ defmodule ShadowSocks.Worker do
     IO.inspect decode_iv
     :gen_tcp.send(client, encode_iv)
     :ok = :inet.setopts(client, active: true)
-    {:ok, {client, key, encode_iv, decode_iv}}
+    {:ok, {client, key, {key, encode_iv, ""}, decode_iv}}
   end
 
   @doc """
   Handler for client requests
   """
-  def handle_info({:tcp, client, bytes}, {client, key, _encode_iv, decode_iv} = state) do
+  def handle_info({:tcp, client, bytes}, {client, key, _encoder, decode_iv} = state) do
     bytes
     |> IO.inspect
     |> ShadowSocks.Coder.decode(key, decode_iv)
@@ -41,14 +41,17 @@ defmodule ShadowSocks.Worker do
   @doc """
   Received remote response
   """
-  def handle_info({:tcp, remote, bytes}, {client, key, encode_iv, _decode_iv} = state) do
-    bytes
+  def handle_info({:tcp, remote, bytes}, {client, key, encoder, decode_iv}) do
+
+    {new_encoder, encoded} = bytes
     |> IO.inspect
-    |> ShadowSocks.Coder.encode(key, encode_iv)
+    |> ShadowSocks.Coder.encode(encoder)
+
+    encoded
     |> IO.inspect
     |> send_back_to(client)
 
-    {:noreply, state}
+    {:noreply, {client, key, new_encoder, decode_iv}}
   end
 
   @doc """
