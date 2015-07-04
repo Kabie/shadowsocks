@@ -33,7 +33,7 @@ defmodule ShadowSocks.Worker do
         Logger.info "Link started #{inspect remote}"
         {:noreply, {:stream, client, remote, encoder, new_decoder}}
       {{:error, reason}, _} ->
-        Logger.warn "Link quit for:", reason: reason
+        Logger.warn "Link quit for: #{inspect reason}"
         {:stop, reason, {:stop, client, nil, encoder, decoder}}
     end
   end
@@ -77,7 +77,7 @@ defmodule ShadowSocks.Worker do
   end
 
   def handle_info(msg, state) do
-    Logger.warn "Got unknown msg", msg: msg
+    Logger.warn "Got unknown msg"
     {:noreply, state}
   end
 
@@ -94,7 +94,7 @@ defmodule ShadowSocks.Worker do
   end
 
   defp parse_header(header) do
-    Logger.error "Can't parse header:", header: header
+    Logger.error "Can't parse header: #{inspect header}"
     {:error, :unknown_header_type}
   end
 
