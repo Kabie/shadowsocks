@@ -68,6 +68,11 @@ defmodule ShadowSocks.Worker do
     {:stop, :normal, {:stop, client, remote, encoder, decoder}}
   end
 
+  def handle_info({:tcp_error, client, reason}, {_status, client, remote, encoder, decoder}) do
+    Logger.info "Worker #{inspect client} stop for: #{inspect reason}"
+    {:stop, :normal, {:stop, client, remote, encoder, decoder}}
+  end
+
   @doc """
   Remote disconnect
   """
