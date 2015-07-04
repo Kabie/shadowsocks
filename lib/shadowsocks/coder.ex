@@ -17,12 +17,6 @@ defmodule ShadowSocks.Coder do
     end
   end
 
-  defp collect(<<block::binary-size(16), rest::binary>>, blocks) do
-    collect(rest, blocks <> block)
-  end
-
-  defp collect(bytes, blocks), do: {bytes, blocks}
-
   # TODO: refactoring
   def encode(bytes, {key, iv, buffer}) do
     txt_len = :erlang.size bytes
@@ -55,5 +49,11 @@ defmodule ShadowSocks.Coder do
     result = :erlang.binary_part(decoded, buf_len, txt_len)
     {{key, new_iv, rest}, result}
   end
+
+  defp collect(<<block::binary-size(16), rest::binary>>, blocks) do
+    collect(rest, blocks <> block)
+  end
+
+  defp collect(bytes, blocks), do: {bytes, blocks}
 
 end

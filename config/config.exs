@@ -26,7 +26,7 @@ use Mix.Config
 config :logger, :console,
   level: :info,
   format: "$date $time [$level] $metadata$message\n",
-  metadata: [:user_id]
+  metadata: [:reason, :msg, :header]
 
 config :shadowsocks, :server, %{
   port: String.to_integer(System.get_env("SHADOW_PORT") || "8388"),
