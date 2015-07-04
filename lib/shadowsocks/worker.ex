@@ -82,7 +82,7 @@ defmodule ShadowSocks.Worker do
   end
 
   def handle_info(msg, state) do
-    Logger.warn "Got unknown msg"
+    Logger.warn "Got unknown msg: #{inspect msg}"
     {:noreply, state}
   end
 
