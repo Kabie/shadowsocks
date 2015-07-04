@@ -31,6 +31,5 @@ config :logger, :console,
 config :shadowsocks, :server, %{
   port: String.to_integer(System.get_env("SHADOW_PORT") || "8388"),
   password: System.get_env("SHADOW_PASS") || "password",
-  key_length: String.to_integer(System.get_env("SHADOW_KEYLEN") || "16"),
-  iv_length: String.to_integer(System.get_env("SHADOW_IVLEN") || "16")
+  key_length: String.to_integer(System.get_env("SHADOW_KEYLEN") || "16")
 }
