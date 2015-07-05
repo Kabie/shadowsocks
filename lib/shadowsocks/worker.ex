@@ -30,10 +30,10 @@ defmodule ShadowSocks.Worker do
     |> connect_remote do
       {{:ok, remote}, payload} ->
         :ok = :gen_tcp.send(remote, payload)
-        Logger.info "Link started #{inspect remote}"
+        Logger.info "Worker linked #{inspect client} to #{inspect remote}"
         {:noreply, {:stream, client, remote, encoder, new_decoder}}
       {{:error, reason}, _} ->
-        Logger.warn "Link quit for: #{inspect reason}"
+        Logger.info "Worker stoped for client #{inspect client} error: #{inspect reason}"
         {:stop, reason, {:stop, client, nil, encoder, decoder}}
     end
   end
@@ -45,8 +45,12 @@ defmodule ShadowSocks.Worker do
     {new_decoder, decoded} = bytes
     |> ShadowSocks.Coder.decode(decoder)
 
-    :gen_tcp.send(remote, decoded)
-    {:noreply, {:stream, client, remote, encoder, new_decoder}}
+    case :gen_tcp.send(remote, decoded) do
+      :ok ->
+        {:noreply, {:stream, client, remote, encoder, new_decoder}}
+      {:error, reason} ->
+        {:stop, reason, {:stop, client, remote, encoder, new_decoder}}
+    end
   end
 
   @doc """
@@ -56,35 +60,46 @@ defmodule ShadowSocks.Worker do
     {new_encoder, encoded} = bytes
     |> ShadowSocks.Coder.encode(encoder)
 
-    :ok = :gen_tcp.send(client, encoded)
-    {:noreply, {:stream, client, remote, new_encoder, decoder}}
+    case :gen_tcp.send(client, encoded) do
+      :ok ->
+        {:noreply, {:stream, client, remote, new_encoder, decoder}}
+      {:error, reason} ->
+        Logger.info "Worker stoped for client #{inspect client} error: #{inspect reason}"
+        {:stop, reason, {:stop, client, remote, new_encoder, decoder}}
+    end
   end
 
   @doc """
   Client disconnect
   """
   def handle_info({:tcp_closed, client}, {_status, client, remote, encoder, decoder}) do
-    Logger.info "Worker #{inspect client} stop"
+    Logger.info "Worker stoped for client #{inspect client} closed"
     {:stop, :normal, {:stop, client, remote, encoder, decoder}}
   end
 
   def handle_info({:tcp_error, client, reason}, {_status, client, remote, encoder, decoder}) do
-    Logger.info "Worker #{inspect client} stop for: #{inspect reason}"
+    Logger.info "Worker stoped for client #{inspect client} error: #{inspect reason}"
     {:stop, :normal, {:stop, client, remote, encoder, decoder}}
   end
 
   @doc """
   Remote disconnect
   """
-  def handle_info({:tcp_closed, remote}, {_status, _client, remote, _encoder, _decoder} = state) do
-    Logger.info "Link #{inspect remote} stop"
-    {:noreply, state}
+  def handle_info({:tcp_closed, remote}, {_status, client, remote, encoder, decoder}) do
+    Logger.info "Worker stoped for remote #{inspect remote} closed"
+    {:stop, :normal, {:stop, client, remote, encoder, decoder}}
+  end
+
+  def handle_info({:tcp_error, remote, reason}, {_status, client, remote, encoder, decoder}) do
+    Logger.info "Worker stoped for remote #{inspect remote} error: #{inspect reason}"
+    {:stop, :normal, {:stop, client, remote, encoder, decoder}}
   end
 
   def handle_info(msg, state) do
-    Logger.warn "Got unknown msg: #{inspect msg}"
-    {:noreply, state}
+    Logger.error "Got unknown msg: #{inspect msg}"
+    {:stop, :normal, state}
   end
+
 
   # Domain header
   defp parse_header(<<3, len, domain::binary-size(len), port::size(16), payload::binary>>) do

@@ -10,10 +10,10 @@ defmodule ShadowSocks.Server do
 
   def init({port, key, iv}) do
     {:ok, socket} = :gen_tcp.listen(port, [:binary,
-      packet: :raw, active: false, reuseaddr: true, backlog: 128])
+      packet: :raw, active: false, reuseaddr: true, keepalive: true, backlog: 128])
 
     # TODO: Make this supervised
-    
+
     {:ok, listener} = Task.start_link(__MODULE__, :accept, [socket, key, iv])
 
     Logger.info "ShadowSocks server started at :#{port}"
