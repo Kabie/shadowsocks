@@ -50,10 +50,4 @@ defmodule ShadowSocks.Coder do
     {{key, new_iv, rest}, result}
   end
 
-  defp collect(<<block::binary-size(16), rest::binary>>, blocks) do
-    collect(rest, blocks <> block)
-  end
-
-  defp collect(bytes, blocks), do: {bytes, blocks}
-
 end
