@@ -29,7 +29,7 @@ defmodule ShadowSocks.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      exrm: "~> 0.18.1"
+      {:exrm, "~> 0.18.1", only: :prod}
     ]
   end
 end
