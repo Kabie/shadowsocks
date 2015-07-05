@@ -33,11 +33,10 @@ See also: [exrm](https://github.com/bitwalker/exrm#deployment)
 Configuration
 -------------
 
-Defaults:
-
-- port `8388`
-- password `"password"`
-- encryption method: `aes-128-cfb`
+Config   | Name        | Default value
+-------- | ----------- | -------------
+port     | SHADOW_PORT | 8388
+password | SHADOW_PASS | "password"
 
 You can do config while:
 
@@ -53,13 +52,13 @@ $ SHADOW_PASS=mypass bin/shadowsocks start
 Limition
 --------
 
-- The only encryption method supported is `aes_cfb`
+- The only encryption method supported is `aes_cfb`, the default method is `aes-128-cfb`
 - Only support TCP (for now)
 
 
 TODO
 ----
 
-[ ] Make encryption as protocol
-[ ] Add more encryption methods
-[ ] Support UDP
+- [ ] Make encryption as protocol
+- [ ] Add more encryption methods
+- [ ] Support UDP
