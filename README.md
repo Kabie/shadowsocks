@@ -49,8 +49,8 @@ $ SHADOW_PASS=mypass bin/shadowsocks start
 ```
 
 
-Limition
---------
+Limitation
+----------
 
 - The only encryption method supported is `aes_cfb`, the default method is `aes-128-cfb`
 - Only support TCP (for now)
