@@ -22,12 +22,12 @@ Make a package:
 
 ```
 $ mix deps.get
-$ MIX_ENV=prod mix release
-$ cp rel/shadowsocks
+$ MIX_ENV=prod mix release --env=prod
+$ cd rel/shadowsocks
 $ bin/shadowsocks start
 ```
 
-See also: [exrm](https://github.com/bitwalker/exrm#deployment)
+See also: [distillery](https://github.com/bitwalker/distillery)
 
 
 Configuration
@@ -42,7 +42,7 @@ You can do config while:
 
 ```
 # releasing
-$ SHADOW_PORT=8388 MIX_ENV=prod mix release
+$ SHADOW_PORT=8388 MIX_ENV=prod mix release --env=prod
 
 # or running
 $ SHADOW_PASS=mypass bin/shadowsocks start
