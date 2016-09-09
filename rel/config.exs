@@ -30,4 +30,7 @@ end
 
 release :shadowsocks do
   set version: current_version(:shadowsocks)
+  set applications: [
+    :crypto
+  ]
 end
